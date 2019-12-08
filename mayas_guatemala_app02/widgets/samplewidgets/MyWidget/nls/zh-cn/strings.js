@@ -2,9 +2,6 @@
 // See http://js.arcgis.com/3.15/esri/copyright.txt and http://www.arcgis.com/apps/webappbuilder/copyright.txt for details.
 //>>built
 define({
-    root:{
-        label1: "This is my widget.",
-        label2: "This is configurable."
-    },
-    "zh-cn": true    
+    label1 : "我的widget。",
+    label2 : "这里可以配置。"
 });
