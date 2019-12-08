@@ -237,6 +237,10 @@
         },
         "version": "2.14"
       },
+{
+  "label": "MyWidget",
+  "uri": "widgets/samplewidgets/MyWidget/Widget"
+},
       {
         "position": {
           "left": 50,
