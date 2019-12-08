@@ -62,6 +62,10 @@
       }
     },
     "widgets": [
+	{
+	  "label": "MyWidget",
+	  "uri": "widgets/samplewidgets/MyWidget/Widget"
+	}
       {
         "label": "Demo",
         "uri": "widgets/samplewidgets/Demo/Widget"
@@ -81,10 +85,6 @@
       {
         "uri": "widgets/samplewidgets/WidgetCommunication/WidgetB/Widget"
       }
-	{
-	  "label": "MyWidget",
-	  "uri": "widgets/samplewidgets/MyWidget/Widget"
-	}
     ]
   },
   "_buildInfo": {
