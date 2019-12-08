@@ -63,6 +63,9 @@
     },
     "widgets": [
       {
+  "label": "MyWidget",
+  "uri": "widgets/samplewidgets/MyWidget/Widget"
+},{
         "label": "Demo",
         "uri": "widgets/samplewidgets/Demo/Widget"
       },
