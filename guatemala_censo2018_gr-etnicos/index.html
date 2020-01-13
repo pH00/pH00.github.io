@@ -18,21 +18,29 @@
 				width: 100%;
 				z-index: 0;
 			}
-			#titulo {
+			#headerDiv {
 				position: relative;
-				padding: 0;
+				z-index: 100;
 				margin: 0;
-				z-index: 1;
-			}
-			h1 {
-				font-size: calc(0.5em + 0.5vw);
-				font-weight: 20;
-				font-family: Helvetica, Arial, sans-serif;
-				letter-spacing: .01em;
-				padding: 1rem 0 0 4.5rem;
+				width: 100%;
+				padding: 0.8rem 0 0 4.5rem;
 				text-shadow: .022em .022em .022em #111;
-				color: #fff;
-			}
+				background-color:rgb(34, 34, 34);
+				box-sizing:border-box;
+				color:rgb(189, 189, 189);
+				display:block;
+				font-family:"Avenir Next W01", "Avenir Next W00", "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+				font-feature-settings:"liga", "calt" 0;
+				font-kerning:normal;
+				font-size:14px;
+				font-style:bold;
+				height:46px;
+				letter-spacing:normal;
+				line-height:21px;
+				text-rendering:optimizelegibility;
+				text-size-adjust:100%;
+				-webkit-box-direction:normal;
+				-webkit-font-smoothing:subpixel-antialiased;			}
 		</style>
 
 		<script src="https://js.arcgis.com/4.11/"></script>
@@ -96,7 +104,7 @@
 								width: 0.25
 							},
 							backgroundColor: [0,0,0,1],
-							referenceScale: 926000, // 1:926,000 view scale
+							referenceScale: 924500, // 1:924,500 view scale
 							legendOptions: {
 								unit: "habitantes"
 							},
@@ -235,9 +243,7 @@
 	</head>
 
 	<body>
+		<div id="headerDiv">GUATEMALA - Grupos Étnicos, 2018</div>
 		<div id="viewDiv"></div>
-		<div id="titulo">
-			<h1>GUATEMALA - Censo Poblacional INE, 2018</h1>
-		</div>
 	</body>
 </html>
