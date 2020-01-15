@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
+		<title>Guatemala - Censo 2018</title>
+
+		<link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"/>
+
+		<style>
+			html,
+			body,
+			#viewDiv {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+			#headerDiv {
+				margin: 0;
+				width: 100%;
+				padding: 1rem 0 0 4.5rem;
+				background-color:rgb(34, 34, 34);
+				box-sizing:border-box;
+				color:rgb(225, 225, 225);
+				font-family:"Avenir Next W01", "Avenir Next W00", "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+				font-kerning:normal;
+				font-size:14px;
+				font-style:bold;
+				height:46px;
+				text-rendering:optimizelegibility;
+				-webkit-box-direction:normal;
+				-webkit-font-smoothing:subpixel-antialiased;			}
+		</style>
+
+		<script src="https://js.arcgis.com/4.14/"></script>
+
+		<script>
+			require([
+				"esri/WebMap",
+				"esri/views/MapView",
+				"esri/layers/FeatureLayer",
+				"esri/renderers/DotDensityRenderer",
+				"esri/widgets/Legend",
+				"esri/widgets/Bookmarks",
+				"esri/widgets/Expand",
+				"esri/widgets/Search",
+				"esri/widgets/Home"
+			], function(
+				WebMap,
+				MapView,
+				FeatureLayer,
+				DotDensityRenderer,
+				Legend,
+				Bookmarks,
+				Expand,
+				Search,
+				Home
+			){
+				const map = new WebMap({
+					portalItem: {
+						id: "89b54a38bf92459b9f3f6e76d702da39"
+					}
+				});
+
+				const view = new MapView({
+					container: "viewDiv",
+					map: map,
+					center: [-90.5,15.7],
+					highlightOptions: {
+						fillOpacity: 0,
+						color: [0,255,255]
+					},
+					popup: {
+						dockEnabled: true,
+						dockOptions: {
+							position: "top-right",
+							buttonEnabled: false,
+							breakpoint: false
+						}
+					},
+					constraints: {
+						maxScale: 35000,
+						snapToZoom: false
+					},
+					scale: 2750000, // 1:2,750,000 view scale
+				});
+		 
+				view.when().then (
+					function() {
+						const dotDensityRenderer = new DotDensityRenderer({
+							referenceDotValue: 100,
+							outline: {
+								color: [ 150,150,150, 0.4 ],
+								width: 0.25
+							},
+							backgroundColor: [0,0,0,1],
+							referenceScale: 1100000, // 1:1,100,000 view scale
+							legendOptions: {
+								unit: "habitantes"
+							},
+							attributes: [
+								{
+									field: "pob_kiche",
+									color: "#f23c3f",
+									label: "Kiche'"
+								},
+								{
+									field: "pob_qeqchi",
+									color: "#e8ca0d",
+									label: "Q'eqchi'"
+								},
+								{
+									field: "pob_kaqchi",
+									color: "#00b6f1",
+									label: "Kaqchikel"
+								},
+								{
+									field: "pob_mam",
+									color: "#32ef94",
+									label: "Mam"
+								},
+								{
+									field: "pob_qanjob",
+									color: "#ff7fe9",
+									label: "Q'anjob'al"
+								},
+								{
+									field: "pob_poqomc",
+									color: "#e2c4a5",
+									label: "Poqomchi'"
+								},
+								{
+									field: "pob_achi",
+									color: "#ff6a00",
+									label: "Achi"
+								},
+								{
+									field: "pob_otros15",
+									color: "#96f7ef",
+									label: "Otros grupos mayas"
+								}
+							]
+						});
+
+						// Add renderer to the layer and define a popup template
+						const url = "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer";
+						const layer = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Datos Poblacionales - Censo 2018\nGrupos Mayas por Municipio",
+							popupTemplate: {
+								title: "Municipio de {municipio} (Dpto. de {departamen})",
+								expressionInfos: [
+//								{
+//									name: "poblacion_total",
+//									title: "Población total:",
+//									expression: "text($feature.pob_total,'#,###,###') + ' hab.'"
+//								},
+								{
+									name: "poblacion_maya",
+									title: "Población Maya:",
+									expression: "text($feature.pob_maya,'#,###,###') + ' hab.'"
+								},
+								{
+									name: "poblacion_achi",
+									title: "Población Achi:",
+									expression: "text($feature.pob_achi,'#,###,###') + ' hab.   (' + text(round($feature.pob_achi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_akateka",
+									title: "Población Akateka:",
+									expression: "text($feature.pob_akatek,'#,###,###') + ' hab.   (' + text(round($feature.pob_akatek/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_awakateka",
+									title: "Población Awakateka:",
+									expression: "text($feature.pob_awakat,'#,###,###') + ' hab.   (' + text(round($feature.pob_awakat/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_chalchiteka",
+									title: "Población Chalchiteka:",
+									expression: "text($feature.pob_chalch,'#,###,###') + ' hab.   (' + text(round($feature.pob_chalch/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_chorti",
+									title: "Población Chorti':",
+									expression: "text($feature.pob_chorti,'#,###,###') + ' hab.   (' + text(round($feature.pob_chorti/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_chuj",
+									title: "Población Chuj:",
+									expression: "text($feature.pob_chuj,'#,###,###') + ' hab.   (' + text(round($feature.pob_chuj/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_itza",
+									title: "Población Itza':",
+									expression: "text($feature.pob_itza,'#,###,###') + ' hab.   (' + text(round($feature.pob_itza/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_ixil",
+									title: "Población Ixil:",
+									expression: "text($feature.pob_ixil,'#,###,###') + ' hab.   (' + text(round($feature.pob_ixil/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_jakalteka",
+									title: "Población Jakalteka / Popti':",
+									expression: "text($feature.pob_jakalt,'#,###,###') + ' hab.   (' + text(round($feature.pob_jakalt/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_kaqchikel",
+									title: "Población Kaqchikel:",
+									expression: "text($feature.pob_kaqchi,'#,###,###') + ' hab.   (' + text(round($feature.pob_kaqchi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_kiche",
+									title: "Población K'iche':",
+									expression: "text($feature.pob_kiche,'#,###,###') + ' hab.   (' + text(round($feature.pob_kiche/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_mam",
+									title: "Población Mam:",
+									expression: "text($feature.pob_mam,'#,###,###') + ' hab.   (' + text(round($feature.pob_mam/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_mopan",
+									title: "Población Mopan:",
+									expression: "text($feature.pob_mopan,'#,###,###') + ' hab.   (' + text(round($feature.pob_mopan/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_poqomam",
+									title: "Población Poqomam:",
+									expression: "text($feature.pob_poqoma,'#,###,###') + ' hab.   (' + text(round($feature.pob_poqoma/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_poqomchi",
+									title: "Población Poqomchi':",
+									expression: "text($feature.pob_poqomc,'#,###,###') + ' hab.   (' + text(round($feature.pob_poqomc/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_qanjobal",
+									title: "Población Q'anjob'al:",
+									expression: "text($feature.pob_qanjob,'#,###,###') + ' hab.   (' + text(round($feature.pob_qanjob/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_qeqchi",
+									title: "Población Q'eqchi':",
+									expression: "text($feature.pob_qeqchi,'#,###,###') + ' hab.   (' + text(round($feature.pob_qeqchi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_sakapulteka",
+									title: "Población Sakapulteka:",
+									expression: "text($feature.pob_sakapu,'#,###,###') + ' hab.   (' + text(round($feature.pob_sakapu/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_sipakapense",
+									title: "Población Sipakapense:",
+									expression: "text($feature.pob_sipaka,'#,###,###') + ' hab.   (' + text(round($feature.pob_sipaka/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_tektiteka",
+									title: "Población Tektiteka:",
+									expression: "text($feature.pob_tektit,'#,###,###') + ' hab.   (' + text(round($feature.pob_tektit/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_tzutujil",
+									title: "Población Tz'utujil:",
+									expression: "text($feature.pob_tzutuj,'#,###,###') + ' hab.   (' + text(round($feature.pob_tzutuj/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								},
+								{
+									name: "poblacion_uspanteka",
+									title: "Población Uspanteka:",
+									expression: "text($feature.pob_uspant,'#,###,###') + ' hab.   (' + text(round($feature.pob_uspant/$feature.pob_maya*100,1),'#.0') + ' %)'"
+								}
+								],
+								content: [{
+									type: "fields",
+									fieldInfos: [
+									{
+										fieldName: "expression/poblacion_maya"
+									},
+									{
+										fieldName: "expression/poblacion_achi"
+									},
+									{
+										fieldName: "expression/poblacion_akateka"
+									},
+									{
+										fieldName: "expression/poblacion_awakateka"
+									},
+									{
+										fieldName: "expression/poblacion_chalchiteka"
+									},
+									{
+										fieldName: "expression/poblacion_chorti"
+									},
+									{
+										fieldName: "expression/poblacion_chuj"
+									},
+									{
+										fieldName: "expression/poblacion_itza"
+									},
+									{
+										fieldName: "expression/poblacion_ixil"
+									},
+									{
+										fieldName: "expression/poblacion_jakalteka"
+									},
+									{
+										fieldName: "expression/poblacion_kaqchikel"
+									},
+									{
+										fieldName: "expression/poblacion_kiche"
+									},
+									{
+										fieldName: "expression/poblacion_mam"
+									},
+									{
+										fieldName: "expression/poblacion_mopan"
+									},
+									{
+										fieldName: "expression/poblacion_poqomam"
+									},
+									{
+										fieldName: "expression/poblacion_poqomchi"
+									},
+									{
+										fieldName: "expression/poblacion_qanjobal"
+									},
+									{
+										fieldName: "expression/poblacion_qeqchi"
+									},
+									{
+										fieldName: "expression/poblacion_sakapulteka"
+									},
+									{
+										fieldName: "expression/poblacion_sipakapense"
+									},
+									{
+										fieldName: "expression/poblacion_tektiteka"
+									},
+									{
+										fieldName: "expression/poblacion_tzutujil"
+									},
+									{
+										fieldName: "expression/poblacion_uspanteka"
+									},
+									]
+								}]
+							},
+							renderer: dotDensityRenderer,
+						});
+
+						map.add(layer,0);
+
+						var searchWidget = new Search({
+							view: view,
+							allPlaceholder: "Municipio",
+							includeDefaultSources: false,
+							sources: [{
+								layer: layer,
+								searchFields: ["municipio"],
+								displayField: "municipio",
+								exactMatch: false,
+								popupEnabled: true,
+								locationEnabled: false,
+								outFields: ["*"],
+								name: "Municipio",
+								placeholder: "buscar municipio"
+							}]
+						});
+
+						view.ui.add([
+							new Home({
+								view: view,
+								group: "top-left"
+							}),
+							new Expand({
+								view: view,
+								content: searchWidget,
+								group: "top-left",
+							}),
+							new Expand({
+								view: view,
+								content: new Legend({ view: view }),
+								group: "top-left",
+								expanded: true
+							}),
+							new Expand({
+								view: view,
+								content: new Bookmarks({ view: view }),
+								group: "top-left"
+							})],
+						"top-left" );
+					}
+				);
+			});
+		</script>
+	</head>
+
+	<body>
+		<div id="headerDiv">GUATEMALA - Población Maya, 2018</div>
+		<div id="viewDiv"></div>
+	</body>
+</html>
