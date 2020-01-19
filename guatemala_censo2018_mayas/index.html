@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>Guatemala - Censo 2018</title>
+	<link rel="icon" 
+      type="image/png" 
+      href="images/gografix_icon.png" />
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #viewDiv {
+        position: absolute;
+        right: 0;
+        left: 0;
+        top: 45px;
+        bottom: 0;
+      }
+	  
+	  #info {
+		position: absolute;
+		top: 55px;
+		left: 75px;
+		font-size: 12px;
+		font-weight: 300;
+		font-family: "Avenir Next W00","Helvetica Neue",Helvetica,Arial,sans-serif;
+		color: #d1d1d1;
+		z-align: 10000;
+	  }
+
+      .header {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 20%;
+      }
+
+      .btns {
+        margin: 0 auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        overflow: auto;
+      }
+
+     .btn-switch {
+        flex-grow: 4;
+        background-color: rgba(34, 111, 14, 0.5);
+        color: #fff;
+        margin: 1px;
+        width: 50%;
+        padding: 13px;
+        overflow: auto;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .active-map {
+        color: #fff;
+        background-color: rgba(34, 111, 14, 1);
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"
+    />
+    <script src="https://js.arcgis.com/4.14/"></script>
+
+    <script>
+		require([
+			"esri/WebMap",
+			"esri/views/MapView",
+			"esri/layers/FeatureLayer",
+			"esri/renderers/DotDensityRenderer",
+			"esri/widgets/Legend",
+			"esri/widgets/Bookmarks",
+			"esri/widgets/Expand",
+			"esri/widgets/Search",
+			"esri/widgets/Home"
+		], function(
+			WebMap,
+			MapView,
+			FeatureLayer,
+			DotDensityRenderer,
+			Legend,
+			Bookmarks,
+			Expand,
+			Search,
+			Home
+		){
+        var webmapids = [
+          "934d229cb0524fc9b2d13608d23320b2",
+          "da187cb818b54e2ebb43569d49e9a1d4",
+          "e82f1ce1454e4b3e829c33ecfbbb0430"
+        ];
+
+        /************************************************************
+         * Create multiple WebMap instances
+         ************************************************************/
+        var webmaps = webmapids.map(function(webmapid) {
+          return new WebMap({
+            portalItem: {
+              // autocasts as new PortalItem()
+              id: webmapid
+            }
+          });
+        });
+
+        /************************************************************
+         * Initialize the View with the first WebMap
+         ************************************************************/
+		var view = new MapView({
+			container: "viewDiv",
+			map: webmaps[0],
+			center: [-90.25,15.75],
+			highlightOptions: {
+				fillOpacity: 0,
+				color: [0,255,255]
+			},
+			popup: {
+				dockEnabled: true,
+				dockOptions: {
+					position: "top-right",
+					buttonEnabled: false,
+					breakpoint: false
+				}
+			},
+			constraints: {
+				maxScale: 150000,
+				snapToZoom: false
+			},
+			scale: 2750000, // 1:2,750,000 view scale
+		});
+		
+        view.when().then(function() {
+			// get the first layer in the collection of operational layers in the WebMap
+			// when the resources in the MapView have loaded.
+			var featureLayer = webmaps[0].layers.getItemAt(0);
+			
+			var searchWidget = new Search({
+				view: view,
+				allPlaceholder: "Municipio",
+				includeDefaultSources: false,
+				sources: [{
+					layer: featureLayer,
+					searchFields: ["municipio"],
+					displayField: "municipio",
+					exactMatch: false,
+					popupEnabled: true,
+					locationEnabled: false,
+					outFields: ["*"],
+					name: "Municipio",
+					placeholder: "buscar municipio"
+				}]
+			});
+			
+			view.ui.add([
+				new Home({
+					view: view,
+					group: "top-left"
+				}),
+				new Expand({
+					view: view,
+					content: searchWidget,
+					group: "top-left",
+				}),
+				new Expand({
+					view: view,
+					content: new Legend({ view: view }),
+					group: "top-left",
+					expanded: true
+				}),
+				new Expand({
+					view: view,
+					content: new Bookmarks({ view: view }),
+					group: "top-left"
+				})],
+			"top-left" )
+		});
+
+        document
+          .querySelector(".btns")
+          .addEventListener("click", function(event) {
+            /************************************************************
+             * On a button click, change the map of the View
+             ************************************************************/
+            var id = event.target.getAttribute("data-id");
+            if (id) {
+              var webmap = webmaps[id];
+
+            view.map = webmap;
+              var nodes = document.querySelectorAll(".btn-switch");
+              for (var idx = 0; idx < nodes.length; idx++) {
+                var node = nodes[idx];
+                var mapIndex = node.getAttribute("data-id");
+                if (mapIndex === id) {
+                  node.classList.add("active-map");
+                } else {
+                  node.classList.remove("active-map");
+                }
+              }
+            }
+          });
+      });
+ </script>
+ 
+  </head>
+
+  <body>
+    <section class="header esri-widget">
+      <div class="btns">
+        <div class="btn-switch active-map" data-id="0">Grupos Étnicos</div>
+        <div class="btn-switch" data-id="1">Grupos Mayas</div>
+        <div class="btn-switch" data-id="2">Territorios Indígenas</div>
+        <div class="btn-switch" data-id="3">Info</div>
+      </div>
+    </section>
+    <div id="viewDiv" class="esri-widget"></div>
+    <div id="info">Datos INE, Censo poblacional 2018</div>
+  </body>
+</html>
