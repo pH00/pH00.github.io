@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Guatemala - Censo 2018</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css"/>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .rampPicker {
+        padding: 7px;
+        background-color: white;
+        text-align: center;
+      }
+
+      .ramp {
+        padding-bottom: 2px;
+        padding-top: 2px;
+        cursor: pointer;
+      }
+    </style>
+
+    <script src="https://js.arcgis.com/4.14/"></script>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/renderers/smartMapping/symbology/support/colorRamps",
+        "esri/symbols/support/symbolUtils"
+      ], function(
+        Map,
+        MapView,
+        FeatureLayer,
+        Legend,
+        Expand,
+        colorRamps,
+        symbolUtils
+      ) {
+
+        const map = new Map({
+          basemap: "gray-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+			center: [-90.5,15.7],
+			highlightOptions: {
+				fillOpacity: 0,
+				color: [0,255,255]
+			},
+			popup: {
+				dockEnabled: true,
+				dockOptions: {
+					position: "top-right",
+					buttonEnabled: false,
+					breakpoint: false
+				}
+			},
+			constraints: {
+				maxScale: 35000,
+				snapToZoom: false
+			},
+			scale: 2750000, // 1:2,750,000 view scale
+        });
+
+        // Add a legend to the view
+
+        const legend = new Legend({
+          view: view
+        });
+
+        // Collapse the basemap gallery widget in the expand widget
+
+        const expand = new Expand({
+          view: view,
+          content: legend
+        });
+        view.ui.add(expand, "bottom-left");
+
+        // Create FeatureLayer instance with popupTemplate
+
+        var fieldInfos = [
+              {
+                fieldName: "pob_maya",
+				label: "Población maya",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              },
+              {
+                fieldName: "pob_total",
+				label: "Población total",
+                format: {
+                  digitSeparator: true,
+                  places: 0
+                }
+              }
+        ];
+
+        function createSymbol(color){
+          return {
+            type: "simple-fill",
+            color: color ? color : [0,0,0,0],
+            outline: {
+              color: [255,255,255,0.2],
+              width: 0.5
+            }
+          };
+        }
+
+        const renderer = {
+          type: "simple",
+          symbol: createSymbol(),
+          visualVariables: [{
+            type: "color",
+            field: "pob_maya",
+            normalizationField: "pob_total",
+            legendOptions: {
+              title: "% Población maya"
+            },
+            // Orange 2 ramp
+            stops: [
+              { value: 0, color: "#fee6ce", label: "0%" },
+              { value: 0.5, color: "#fdae6b", label: "50%"  },
+              { value: 1, color: "#e6550d", label: "100%" }
+            ]
+          }]
+        };
+
+        const layer = new FeatureLayer({
+          url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer/0?token=uSzXza85SKKO8LFGn7cky88GO7EmMItFsa7rti5IgBfgg_YNFMlJrM5iDP2o5OttIL2bJB-4MOFZa-ujsgyhf_QhY9Z9O1CXr33hDKM7rBGZTzy9u2wcBuNPJqZTs4HXt1b-YbeD6pX1M0LsN3GDHDLHjRHZQc7Cevg_R3wY5yHvfqhxVuC-ugCs78b1IjdV1hbiRQNzrIdsxYTN6VLR2hF-YrT7xfeBEfergYxrBo0V7D6K8qiWx-wNj1ue9isN",
+          renderer: renderer,
+          title: "Municipios",
+          visible: true,
+		  opacity: 1,
+          popupTemplate: {
+            title: "{municipio} (dpto. de {departamen})",
+            content: [
+              {
+                type: "text",
+                text:
+                  "{por_maya_string} de los habitantes del municipio son indígenas mayas."
+              },
+              {
+                type: "fields",
+                fieldInfos: fieldInfos
+              }
+            ],
+          }
+        });
+
+        map.add(layer);
+
+        // Pre-selected ramps given to the user
+        const rampNames = [
+          "Orange 2",
+          "Blue 6",
+          "Green 4",
+          "Pink 1",
+          "Red 4",
+          "Gray 1",
+          "Purple 4"
+        ];
+
+        const rampPicker = document.createElement("div");
+        rampPicker.classList.add("rampPicker");
+        rampPicker.innerHTML = "Selecciona el gradiente de colores"
+
+        // get the colors associated with each ramp
+        // and render a preview in the UI
+        rampNames.forEach(function(rampName){
+          const colorRamp = colorRamps.byName(rampName);
+          const colors = colorRamp.colorsForClassBreaks[2].colors;
+
+          const colorRampElement = symbolUtils.renderColorRampPreviewHTML(colors, {
+            align: "horizontal",
+            width: 100
+          });
+          const colorRampElementContainer = document.createElement("div");
+          colorRampElementContainer.classList.add("ramp");
+
+          // when the ramp preview element is clicked
+          // update the renderer with the colors in the ramp
+          colorRampElementContainer.addEventListener("click", function(){
+            updateColorsInRenderer(colors);
+          });
+
+          colorRampElementContainer.appendChild(colorRampElement);
+          rampPicker.appendChild(colorRampElementContainer);
+        });
+
+        const rampExpand = new Expand({
+          content: rampPicker,
+          view: view,
+          expanded: true
+        });
+        view.ui.add(rampExpand, "top-left");
+
+        function updateColorsInRenderer(colors){
+          const renderer = layer.renderer.clone();
+          const colorVariable = renderer.visualVariables[0].clone();
+          colorVariable.stops.forEach(function(stop, index){
+            stop.color = colors[index];
+          });
+          colorVariable.stops;
+          renderer.visualVariables = [ colorVariable ];
+          layer.renderer = renderer;
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
