@@ -41,6 +41,7 @@
         "esri/Map",
         "esri/views/MapView",
         "esri/layers/FeatureLayer",
+        "esri/widgets/Home",
         "esri/renderers/smartMapping/creators/color",
         "esri/renderers/smartMapping/statistics/histogram",
         "esri/widgets/smartMapping/ColorSlider",
@@ -49,6 +50,7 @@
         Map,
         MapView,
         FeatureLayer,
+		Home,
         colorRendererCreator,
         histogram,
         ColorSlider,
@@ -222,6 +224,12 @@
               console.log("there was an error: ", error);
             });
         }
+		
+		const homeBtn = new Home({
+          view: view
+        });
+
+        view.ui.add(homeBtn, "top-left");
       });
     </script>
   </head>
