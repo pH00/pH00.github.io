@@ -1,0 +1,120 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+		
+		<title>Guatemala - Censo 2018</title>
+		
+		<style>
+			html, body, #viewDiv {
+				padding: 0;
+				margin: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+  
+		<link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/light/main.css"/>
+
+		<script src="https://js.arcgis.com/4.14/"></script>
+  
+		<script>  
+			require([
+				"esri/views/MapView",
+				"esri/widgets/Home",
+				"esri/widgets/Expand",
+				"esri/widgets/Search",
+				"esri/widgets/Legend",
+				"esri/WebMap"
+			],
+			function(
+				MapView,
+				Home,
+				Expand,
+				Search,
+				Legend,
+				WebMap
+			){
+				const map = new WebMap({
+					portalItem: {
+						id: "65c984e8b3854c58bae98ee978a9dafd"
+						}
+				});
+
+				var view = new MapView({
+					container: "viewDiv",
+					map: map,
+					center: [-90.5,15.7],
+					highlightOptions: {
+						fillOpacity: 0,
+						color: [0,255,255]
+					},
+					popup: {
+						dockEnabled: true,
+						dockOptions: {
+							position: "top-right",
+							buttonEnabled: false,
+							breakpoint: false
+						}
+					},
+					constraints: {
+						maxScale: 35000,
+						snapToZoom: false
+					},
+					scale: 2750000, // 1:2,750,000 view scale
+				});
+
+				view.when(function() {
+					var featureLayer = map.layers.getItemAt(1);
+
+					var searchWidget = new Search({
+						view: view,
+						allPlaceholder: "Municipio",
+						includeDefaultSources: false,
+						sources: [{
+							layer: featureLayer,
+							searchFields: ["municipio"],
+							displayField: "municipio",
+							exactMatch: false,
+							popupEnabled: true,
+							locationEnabled: false,
+							outFields: ["*"],
+							name: "Municipio",
+							placeholder: "buscar municipio"
+						}]
+					});
+						
+					view.ui.add([
+						new Home({
+							view: view,
+							group: "top-left"
+						}),
+						new Expand({
+							view: view,
+							content: searchWidget,
+							group: "top-left",
+						}),
+					], "top-left" );
+
+					var legend = new Legend({
+						view: view,
+						layerInfos: [
+							{
+								layer: featureLayer,
+								title: "Grupos étnicos por municipio"
+							}
+						]
+					});
+
+					view.ui.add(legend, "bottom-left");
+
+				});
+			});
+		</script>
+	</head>
+	
+	<body>
+		<div id="viewDiv"></div>
+	</body>
+	
+</html>
