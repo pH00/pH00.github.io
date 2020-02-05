@@ -1,0 +1,295 @@
+<html>
+	<head>
+		<meta name="description" content="Guatemala 2018 population census map: Filter mayan population rate by municipio">
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+		
+		<title>Guatemala - Censo 2018</title>
+		
+		<link rel="icon" 
+			type="image/png" 
+			href="images/gografix_icon.png"
+		/>
+
+		<link
+			rel="stylesheet"
+			href="https://js.arcgis.com/4.14/esri/themes/light/main.css"
+		/>
+		
+		<link
+			rel="stylesheet"
+			href="styles/slider_map.css"
+		/>
+		
+		<script src="https://js.arcgis.com/4.13/"></script>
+
+		<script>
+			require([
+				"esri/Map",
+				"esri/views/MapView",
+				"esri/layers/FeatureLayer",
+				"esri/views/layers/support/FeatureEffect",
+				"esri/widgets/Home",
+				"esri/widgets/Expand",
+				"esri/widgets/Search",
+				"esri/widgets/Legend",
+				"esri/widgets/Slider"
+			],
+			function(
+				Map, 
+				MapView,
+				FeatureLayer,
+				FeatureEffect,
+				Home,
+				Expand,
+				Search,
+				Legend,
+				Slider
+			) {
+
+				var map = new Map({
+					basemap: "gray-vector"
+				});
+
+				var view = new MapView({
+					container: "viewDiv",
+					map: map,
+					center: [-90.5,15.7],
+					highlightOptions: {
+						fillOpacity: 0,
+						color: [0,255,255]
+					},
+					popup: {
+						dockEnabled: true,
+						dockOptions: {
+							position: "top-right",
+							buttonEnabled: false,
+							breakpoint: false
+						}
+					},
+					constraints: {
+						maxScale: 150000,
+						snapToZoom: false
+					},
+					scale: 2750000, // 1:2,750,000 view scale
+				});
+				
+				var republicRenderer = {
+					type: "simple",
+					symbol: {
+						type: "simple-fill",
+						color: [0,0,0,0],
+						outline: {
+							color: "#149ece",
+							width: 2
+						}
+					}
+				};
+
+				var municipioBckRenderer = {
+					type: "simple",
+					symbol: {
+						type: "simple-fill",
+						color: [210, 210, 210, .3],
+						outline: {
+							color: [210, 210, 210, 1],
+							width: 0.25
+						}
+					}
+				};
+
+				var municipioRenderer = {
+					type: "simple",
+					symbol: {
+						type: "simple-fill",
+						color: "#ed5151",
+						style: "solid",
+						outline: {
+							color: [255, 255, 255, 0.3],
+							width: 0.25
+						}
+					}
+				};
+				
+				var featureLayer0 = new FeatureLayer({
+					url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer/0",
+					outFields: ["*"],
+					opacity: 1,
+					renderer: municipioBckRenderer
+				});
+
+				map.add(featureLayer0,0);
+				
+				var featureLayer = new FeatureLayer({
+					url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer/0",
+					outFields: ["*"],
+					popupTemplate: {
+						title: "Municipio de {municipio}, dpto. de {departamen}", // Show field value
+						content: "{por_maya_string} de la población de este municipio pertenece a grupos mayas ({pob_maya} de {pob_total} hab.)"
+					},
+					opacity: 1,
+					renderer: municipioRenderer
+				});
+				
+				map.add(featureLayer,1);
+				
+				var featureLayerRep = new FeatureLayer({
+					url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/guatemala/FeatureServer/0",
+					outFields: ["*"],
+					opacity: 1,
+					renderer: republicRenderer
+				});
+				
+				map.add(featureLayerRep,2);
+				
+				// inicializa con porcentaje de población maya = 0.5
+				setFeatureLayerViewFilter(0.5);
+
+				var searchWidget = new Search({
+					view: view,
+					allPlaceholder: "Municipio",
+					includeDefaultSources: false,
+					sources: [{
+						layer: featureLayer,
+						searchFields: ["municipio"],
+						displayField: "municipio",
+						exactMatch: false,
+						popupEnabled: true,
+						locationEnabled: false,
+						outFields: ["*"],
+						name: "Municipio",
+						placeholder: "buscar municipio"
+					}]
+				});
+						
+				view.ui.add([
+					new Home({
+						view: view,
+						group: "top-left"
+					}),
+					new Expand({
+						view: view,
+						content: searchWidget,
+						group: "top-left"
+					})
+				], "top-left" );
+				
+				var legend = new Legend({
+					view: view,
+					layerInfos: [{
+						layer: featureLayer,
+						title: "Municipios " + '\r\n' + "con pob. maya >"
+					}],
+					container: "sliderDiv"
+				});
+
+				view.ui.add("containerDiv", "bottom-left");
+					
+				const slider = new Slider({
+					min: 0,
+					max: 100,
+					values: [50],
+					label: "Porcentaje de población maya",
+					rangeLabelsVisible: true,
+					labelsVisible: true,
+					labelInputsEnabled: true,
+					precision: 4,
+					steps: 0.1,
+					container: "sliderDiv"
+				});
+
+				slider.layout = "vertical";
+				
+				slider.on(["thumb-change", "thumb-drag"], function(event) {
+					setFeatureLayerViewFilter(event.value / 100);
+					updateFilterDisplay(parseInt(event.value * 10) / 10)
+				});
+				
+				slider.labelFormatFunction = function(value, type) {
+					return (type === "value") ? "> " + value + " %" : value + " %";
+				};
+
+				slider.inputFormatFunction = function(value,type){
+					return (type === "value") ? "> " + value + " %" : value + " %";
+				};
+
+				slider.inputParseFunction = function(value, type, index){return parseFloat(value)};
+				
+				slider.tickConfigs = [{
+					mode: "percent",
+					values: [0,10,20,30,40,50,60,70,80,90,100],
+					labelsVisible: true,
+					tickCreatedFunction: function(initialValue, tickElement, labelElement) {
+						labelElement.onclick = function() {
+							const newValue = labelElement["data-value"];
+							slider.values = [newValue];
+							setFeatureLayerViewFilter(newValue / 100);
+							updateFilterDisplay(parseInt(newValue * 10) / 10)
+						}
+					}
+				}];				
+					
+				// Server-side filter
+				function setFeatureLayerFilter(expression) {
+					featureLayer.definitionExpression = expression;
+				}
+				
+				// Client-side filter
+				function setFeatureLayerViewFilter(percent) {
+					view.whenLayerView(featureLayer).then(function(featureLayerView) {
+						featureLayerView.filter = {
+							where: "Porcen_May > " + percent
+						};
+
+			//*** CHALLENGE - Style the excluded features ***//
+			//			if (featureLayerView) {
+			//				featureLayerView.effect = {
+			//					filter: {
+			//						where: "Porcen_May > " + percent
+			//					},
+			//					excludedEffect: "grayscale(100%) opacity(50%)"
+			//				}
+			//			}
+					});
+				}
+				  
+			//*** CHALLENGE: Find and highlight features ***//
+				
+			//	var highlight;
+
+			//	view.whenLayerView(featureLayer).then(function(featureLayerView) {
+			//		view.on("pointer-move", function(event){
+			//			view.hitTest(event).then(function(response){
+			//				// Only return features for the feature layer
+			//				var feature = response.results.filter(function (result) {
+			//					return result.graphic.layer === featureLayer;
+			//				})[0].graphic;
+			//				if (highlight) {
+			//					highlight.remove();
+			//				}
+							// Highlight feature
+			//				highlight = featureLayerView.highlight(feature);
+			//			});
+			//		});
+			//	});
+
+				function updateFilterDisplay(porcentaje) {
+					const filterElement = document.getElementById("filterDiv");
+					filterElement.innerText = porcentaje + " %";
+				}
+			});
+			
+		</script>
+	</head>
+
+	<body>
+		<div id="viewDiv"></div>
+		<!-- <div id="sliderContainer" class="esri-widget"> -->
+		<div id="containerDiv" class="esri-widget">
+			<span id="title" class="esri-widget">% de población maya</span>
+			<div id="sliderDiv"></div>
+			<span id="filterDiv">50 %</span>
+		</div>
+	</body>
+
+</html>

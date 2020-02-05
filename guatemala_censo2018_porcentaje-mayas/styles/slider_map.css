@@ -1,0 +1,76 @@
+html,
+body,
+#viewDiv {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	width: 100%;
+}
+
+#containerDiv {
+	background-color: white;
+	padding: 18px 3px;
+	text-align: center;
+	min-width: 165px;
+	height: 500px;
+}
+
+#filterDiv {
+	position: absolute;
+	top: 439px;
+	left:112px;
+	font-weight: 600;
+}
+
+.esri-slider__max, .esri-slider__min {
+	visibility: hidden;
+}
+
+.esri-slider--vertical .esri-slider__label {
+	min-width: 70px;
+	left: 18px;
+}
+
+.esri-slider--vertical .esri-slider__tick-label {
+	min-width: 50px;
+	margin-left: -23px;
+}
+
+.esri-slider--vertical .esri-slider__ticks {
+	left: 40px;
+	margin: 0 0 0 -50px;
+}
+
+.esri-slider__tick-label {
+	font-size: 9px;
+}
+
+[aria-label="100 %"],[aria-label="50 %"],[aria-label="0 %"] {
+	font-size: 12px;
+}
+
+.esri-slider--vertical .esri-slider__track {
+	width: 9px;
+	left: -4px;
+}
+
+.esri-slider__thumb {
+	left: -4px;
+}
+
+.esri-slider__segment-1 {
+	background-color: #ed5151;
+}
+
+.esri-ui-corner .esri-component .esri-widget--panel {
+	width: 165px;
+}
+/* legend width value */
+
+.esri-widget__heading {
+	margin: 0;
+}
+
+.esri-legend__service {
+	padding-bottom: 0;
+}
