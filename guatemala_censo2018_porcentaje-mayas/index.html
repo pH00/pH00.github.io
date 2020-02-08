@@ -21,9 +21,10 @@
 			href="styles/slider_map.css"
 		/>
 		
-		<script src="https://js.arcgis.com/4.13/"></script>
+		<script src="https://js.arcgis.com/4.14/"></script>
 
 		<script>
+				
 			require([
 				"esri/Map",
 				"esri/views/MapView",
@@ -33,7 +34,9 @@
 				"esri/widgets/Expand",
 				"esri/widgets/Search",
 				"esri/widgets/Legend",
-				"esri/widgets/Slider"
+				"esri/widgets/Slider",
+				"esri/tasks/support/Query",
+				"esri/intl",
 			],
 			function(
 				Map, 
@@ -44,7 +47,9 @@
 				Expand,
 				Search,
 				Legend,
-				Slider
+				Slider,
+				Query,
+				intl,
 			) {
 
 				var map = new Map({
@@ -62,7 +67,7 @@
 					popup: {
 						dockEnabled: true,
 						dockOptions: {
-							position: "top-right",
+							position: "top-center",
 							buttonEnabled: false,
 							breakpoint: false
 						}
@@ -113,22 +118,25 @@
 				
 				var featureLayer0 = new FeatureLayer({
 					url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer/0",
-					outFields: ["*"],
+					outFields: ["municipio"],
 					opacity: 1,
-					renderer: municipioBckRenderer
+					renderer: municipioBckRenderer,
+					labelsVisible: true
 				});
 
 				map.add(featureLayer0,0);
 				
 				var featureLayer = new FeatureLayer({
 					url: "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer/0",
-					outFields: ["*"],
+					outFields: ["municipio", "departamen", "por_maya_string", "pob_maya", "pob_total", "Porcen_May"],
 					popupTemplate: {
 						title: "Municipio de {municipio}, dpto. de {departamen}", // Show field value
 						content: "{por_maya_string} de la población de este municipio pertenece a grupos mayas ({pob_maya} de {pob_total} hab.)"
 					},
 					opacity: 1,
-					renderer: municipioRenderer
+					renderer: municipioRenderer,
+					legendEnabled: true,
+					labelsVisible: false
 				});
 				
 				map.add(featureLayer,1);
@@ -142,8 +150,8 @@
 				
 				map.add(featureLayerRep,2);
 				
-				// inicializa con porcentaje de población maya = 0.5
-				setFeatureLayerViewFilter(0.5);
+ 				// inicializa con porcentaje de población maya = 50 %
+				setFeatureLayerViewFilter(50);
 
 				var searchWidget = new Search({
 					view: view,
@@ -174,11 +182,13 @@
 					})
 				], "top-left" );
 				
+				var titulo = "Municipios " + '\r\n' + "con pob. maya > ";
+				
 				var legend = new Legend({
 					view: view,
 					layerInfos: [{
 						layer: featureLayer,
-						title: "Municipios " + '\r\n' + "con pob. maya >"
+						title: titulo
 					}],
 					container: "sliderDiv"
 				});
@@ -201,19 +211,20 @@
 				slider.layout = "vertical";
 				
 				slider.on(["thumb-change", "thumb-drag"], function(event) {
-					setFeatureLayerViewFilter(event.value / 100);
-					updateFilterDisplay(parseInt(event.value * 10) / 10)
+					setFeatureLayerViewFilter(event.value)
 				});
 				
 				slider.labelFormatFunction = function(value, type) {
-					return (type === "value") ? "> " + value + " %" : value + " %";
+					return (type === "value") ? "> " + value + " %" : value + " %"
 				};
 
 				slider.inputFormatFunction = function(value,type){
-					return (type === "value") ? "> " + value + " %" : value + " %";
+					return (type === "value") ? "> " + value + " %" : value + " %"
 				};
 
-				slider.inputParseFunction = function(value, type, index){return parseFloat(value)};
+				slider.inputParseFunction = function(value, type, index){
+					return isNaN(parseFloat(value)) ? 50 : parseFloat(value)
+				};
 				
 				slider.tickConfigs = [{
 					mode: "percent",
@@ -223,59 +234,78 @@
 						labelElement.onclick = function() {
 							const newValue = labelElement["data-value"];
 							slider.values = [newValue];
-							setFeatureLayerViewFilter(newValue / 100);
-							updateFilterDisplay(parseInt(newValue * 10) / 10)
+							setFeatureLayerViewFilter(newValue)
 						}
 					}
 				}];				
 					
 				// Server-side filter
-				function setFeatureLayerFilter(expression) {
-					featureLayer.definitionExpression = expression;
-				}
+//				function setFeatureLayerFilter(expression) {
+//					featureLayer.definitionExpression = expression;
+//				}
 				
 				// Client-side filter
-				function setFeatureLayerViewFilter(percent) {
+				function setFeatureLayerViewFilter(porcentaje) {
 					view.whenLayerView(featureLayer).then(function(featureLayerView) {
 						featureLayerView.filter = {
-							where: "Porcen_May > " + percent
+							where: "Porcen_May > " + porcentaje / 100
 						};
 
-			//*** CHALLENGE - Style the excluded features ***//
-			//			if (featureLayerView) {
-			//				featureLayerView.effect = {
-			//					filter: {
-			//						where: "Porcen_May > " + percent
-			//					},
-			//					excludedEffect: "grayscale(100%) opacity(50%)"
-			//				}
-			//			}
+						var filterTags = document.getElementsByClassName("filterDiv");
+						for (var i = 0; i < filterTags.length; i++) {
+							filterTags[i].innerText = parseInt(porcentaje * 10) / 10 + " %"
+						};
+
+						var countMunicipios = {
+							onStatisticField: "municipio",
+							outStatisticFieldName: "municipios_count",
+							statisticType: "count"
+						};
+
+						var sumMayaPopulation = {
+							onStatisticField: "pob_maya",
+							outStatisticFieldName: "pob_maya_sum",
+							statisticType: "sum"
+						};
+
+						var sumPopulation = {
+							onStatisticField: "pob_total",
+							outStatisticFieldName: "pob_total_sum",
+							statisticType: "sum"
+						};
+
+						var sumArea = {
+							onStatisticField: "Shape__Area",
+							outStatisticFieldName: "area_sum",
+							statisticType: "sum"
+						};
+
+						const numberFormatIntlOptions = intl.convertNumberFormatToIntlOptions({
+							places: 0,
+							digitSeparator: true
+						});
+						
+						var query = featureLayer.createQuery();
+						query.where = "Porcen_May > " + porcentaje / 100;
+						query.outStatistics = [countMunicipios, sumMayaPopulation, sumPopulation, sumArea];
+						featureLayer.queryFeatures(query).then(function(response){
+							var stats = response.features[0].attributes;
+							var porcent_maya = ( stats.pob_total_sum == "") ? 0 : parseInt(stats.pob_maya_sum / stats.pob_total_sum *1000) / 10;
+							var porcent_area = parseInt(stats.area_sum / 1000000 / 117312 *1000) / 10;
+							const filterElement_1 = document.getElementById("cuenta_muni");
+							filterElement_1.innerText = stats.municipios_count;
+							const filterElement_2 = document.getElementById("pob-maya");
+							filterElement_2.innerText = intl.formatNumber(stats.pob_maya_sum, numberFormatIntlOptions);
+							const filterElement_3 = document.getElementById("pob-total");
+							filterElement_3.innerText = intl.formatNumber(stats.pob_total_sum, numberFormatIntlOptions);
+							const filterElement_4 = document.getElementById("porcentaje-maya");
+							filterElement_4.innerText = porcent_maya;
+							const filterElement_5 = document.getElementById("area");
+							filterElement_5.innerText = intl.formatNumber(parseInt(stats.area_sum / 1000000), numberFormatIntlOptions);
+							const filterElement_6 = document.getElementById("porcentaje-area");
+							filterElement_6.innerText = porcent_area;
+						});
 					});
-				}
-				  
-			//*** CHALLENGE: Find and highlight features ***//
-				
-			//	var highlight;
-
-			//	view.whenLayerView(featureLayer).then(function(featureLayerView) {
-			//		view.on("pointer-move", function(event){
-			//			view.hitTest(event).then(function(response){
-			//				// Only return features for the feature layer
-			//				var feature = response.results.filter(function (result) {
-			//					return result.graphic.layer === featureLayer;
-			//				})[0].graphic;
-			//				if (highlight) {
-			//					highlight.remove();
-			//				}
-							// Highlight feature
-			//				highlight = featureLayerView.highlight(feature);
-			//			});
-			//		});
-			//	});
-
-				function updateFilterDisplay(porcentaje) {
-					const filterElement = document.getElementById("filterDiv");
-					filterElement.innerText = porcentaje + " %";
 				}
 			});
 			
@@ -283,12 +313,89 @@
 	</head>
 
 	<body>
-		<div id="viewDiv"></div>
-		<!-- <div id="sliderContainer" class="esri-widget"> -->
+		<div id="header" class="esri-widget">
+			<span id="span_tipoA">fuente: INE, Censo poblacional 2018 Resultados por municipio</span>
+			<span><h3>Guatemala - Porcentaje de Población Maya por Municipio</h3></span>
+		</div>
+		<div id="viewDiv">
+			<div id="sidebar">
+				<h1>Municipios filtrados:<br>Datos demográficos y territoriales</h1>
+				<br>
+				<div id="results">
+					<h3 style="text-align: center;">En los municipios resaltados<br>más de <span class="filterDiv" id="filterDiv_1">50 %</span> de la población<br>
+						 censada se identifica como maya.<br><br>
+						<table style="width:100%">
+							<tr>
+								<td colspan="2">
+									Municipios filtrados:
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="cuenta_muni"></span>
+									municipios de 340
+								</td>
+							</tr>
+							<tr style="height:40px; vertical-align: bottom;">
+								<td colspan="2">
+									Población total:
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="pob-total"></span>
+									 hab.
+								</td>
+							</tr>
+							<tr style="height:40px; vertical-align: bottom;">
+								<td colspan="2">
+									Población maya:
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="pob-maya"></span>
+									 hab.
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="porcentaje-maya"></span>
+									 % de la población total
+								</td>
+							</tr>
+							<tr style="height:40px; vertical-align: bottom;">
+								<td colspan="2">
+									Extensión territorial:
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="area"></span>
+									Km<sup>2</sup>
+								</td>
+							</tr>
+							<tr>
+								<td style="width:20%"></td>
+								<td>
+									<span class="vals" id="porcentaje-area"></span>
+									 % del territorio nacional
+								</td>
+							</tr>
+						</table>
+					</h3>
+				</div>
+			</div>
+		</div>
 		<div id="containerDiv" class="esri-widget">
 			<span id="title" class="esri-widget">% de población maya</span>
 			<div id="sliderDiv"></div>
-			<span id="filterDiv">50 %</span>
+			<span class="filterDiv" id="filterDiv_2">50 %</span>
 		</div>
 	</body>
 
