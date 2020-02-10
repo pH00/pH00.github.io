@@ -5,32 +5,64 @@
 		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
 		<title>Guatemala - Censo 2018</title>
 
-		<link rel="stylesheet" href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"/>
+		<link
+			rel="icon" 
+			type="image/png" 
+			href="images/gografix_icon.png"
+		/>
+
+		<link
+			rel="stylesheet"
+			href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"
+		/>
 
 		<style>
 			html,
-			body,
-			#viewDiv {
-				padding: 0;
-				margin: 0;
+			body {
 				height: 100%;
 				width: 100%;
-			}
-			#headerDiv {
+				padding: 0;
 				margin: 0;
+			}
+				
+			#applicationDiv {
+				position: absolute;
+				left: 0;
+				top: 0;
 				width: 100%;
-				padding: 1rem 0 0 4.5rem;
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+			}
+
+			#headerDiv {
+				width: 100%;
 				background-color:rgb(34, 34, 34);
-				box-sizing:border-box;
 				color:rgb(225, 225, 225);
 				font-family:"Avenir Next W01", "Avenir Next W00", "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
-				font-kerning:normal;
-				font-size:14px;
-				font-style:bold;
-				height:46px;
-				text-rendering:optimizelegibility;
-				-webkit-box-direction:normal;
-				-webkit-font-smoothing:subpixel-antialiased;			}
+				font-weight: 400;
+				font-style: normal;
+				height:50px;
+				text-align: center;
+			}
+			
+			#viewDiv {
+				height: calc(100% - 50px);
+				width: 100%;
+				flex: 1 1 auto;
+				order: 1;
+			}
+			
+			#span_tipoA {
+				position: absolute;
+				left: 120px;
+				padding-top: 7px;
+				font-size: 0.8rem;
+				width: 14rem;
+				text-indent: -3rem;
+				text-align: left;
+			}
 		</style>
 
 		<script src="https://js.arcgis.com/4.14/"></script>
@@ -45,7 +77,8 @@
 				"esri/widgets/Bookmarks",
 				"esri/widgets/Expand",
 				"esri/widgets/Search",
-				"esri/widgets/Home"
+				"esri/widgets/Home",
+				"esri/widgets/Fullscreen"
 			], function(
 				WebMap,
 				MapView,
@@ -55,7 +88,8 @@
 				Bookmarks,
 				Expand,
 				Search,
-				Home
+				Home,
+				Fullscreen
 			){
 				const map = new WebMap({
 					portalItem: {
@@ -80,10 +114,15 @@
 						}
 					},
 					constraints: {
-						maxScale: 35000,
-						snapToZoom: false
+						maxScale: 350000,
+						minZoom: 7,
+						snapToZoom: false,
+						rotationEnabled: false
 					},
 					scale: 2750000, // 1:2,750,000 view scale
+					// This ensures that, when going fullscreen, the top left corner of the view extent
+					// stays aligned with the top left corner of the view's container
+					resizeAlign: "top-left"
 				});
 		 
 				view.when().then (
@@ -103,7 +142,7 @@
 								{
 									field: "pob_kiche",
 									color: "#f23c3f",
-									label: "Kiche'"
+									label: "K'iche'"
 								},
 								{
 									field: "pob_qeqchi",
@@ -144,7 +183,7 @@
 						});
 
 						// Add renderer to the layer and define a popup template
-						const url = "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala/FeatureServer";
+						const url = "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala_vShort/FeatureServer";
 						const layer = new FeatureLayer({
 							url: url,
 							minScale: 20000000,
@@ -393,6 +432,14 @@
 								group: "top-left"
 							})],
 						"top-left" );
+						
+						view.ui.add(
+							new Fullscreen({
+							view: view,
+							element: viewDiv
+							}),
+							"top-right"
+						);
 					}
 				);
 			});
@@ -400,7 +447,12 @@
 	</head>
 
 	<body>
-		<div id="headerDiv">GUATEMALA - Población Maya, 2018</div>
-		<div id="viewDiv"></div>
+		<div id="applicationDiv">
+			<div id="headerDiv" class="esri-widget">
+				<span id="span_tipoA">fuente: INE, Censo poblacional 2018 Resultados por municipio</span>
+				<span><h3>GUATEMALA - Población maya</h3></span>
+			</div>
+			<div id="viewDiv"></div>
+		</div>
 	</body>
 </html>
