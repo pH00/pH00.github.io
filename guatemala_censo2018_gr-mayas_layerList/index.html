@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
+		<title>Guatemala - Censo 2018</title>
+
+		<link
+			rel="icon" 
+			type="image/png" 
+			href="images/gografix_icon.png"
+		/>
+
+		<link
+			rel="stylesheet"
+			href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"
+		/>
+
+		<style>
+			html,
+			body {
+				height: 100%;
+				width: 100%;
+				padding: 0;
+				margin: 0;
+			}
+				
+			#applicationDiv {
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+			}
+
+			#headerDiv {
+				width: 100%;
+				background-color:rgb(34, 34, 34);
+				color:rgb(225, 225, 225);
+				font-family:"Avenir Next W01", "Avenir Next W00", "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+				font-weight: 400;
+				font-style: normal;
+				height:50px;
+				text-align: center;
+			}
+			
+			#viewDiv {
+				height: calc(100% - 50px);
+				width: 100%;
+				flex: 1 1 auto;
+				order: 1;
+			}
+			
+			#span_tipoA {
+				position: absolute;
+				left: 120px;
+				padding-top: 7px;
+				font-size: 0.8rem;
+				width: 14rem;
+				text-indent: -3rem;
+				text-align: left;
+			}
+		</style>
+
+		<script src="https://js.arcgis.com/4.14/"></script>
+
+		<script>
+			require([
+				"esri/WebMap",
+				"esri/views/MapView",
+				"esri/layers/GroupLayer",
+				"esri/layers/FeatureLayer",
+				"esri/renderers/DotDensityRenderer",
+				"esri/widgets/Legend",
+				"esri/widgets/LayerList",
+				"esri/widgets/Bookmarks",
+				"esri/widgets/Expand",
+				"esri/widgets/Search",
+				"esri/widgets/Home",
+				"esri/widgets/Fullscreen",
+				"esri/PopupTemplate"
+			], function(
+				WebMap,
+				MapView,
+				GroupLayer,
+				FeatureLayer,
+				DotDensityRenderer,
+				Legend,
+				LayerList,
+				Bookmarks,
+				Expand,
+				Search,
+				Home,
+				Fullscreen,
+				PopupTemplate
+			){
+				const map = new WebMap({
+					portalItem: {
+						id: "caa09e32e6724dab87d9f55a7af67824"
+					}
+				});
+
+				const view = new MapView({
+					container: "viewDiv",
+					map: map,
+					center: [-90.5,15.7],
+					highlightOptions: {
+						fillOpacity: 0,
+						color: [0,255,255]
+					},
+					popup: {
+						dockEnabled: true,
+						dockOptions: {
+							position: "bottom-right",
+							buttonEnabled: false,
+							breakpoint: false
+						}
+					},
+					constraints: {
+						maxScale: 350000,
+						minZoom: 7,
+						snapToZoom: false,
+						rotationEnabled: false
+					},
+					scale: 2750000, // 1:2,750,000 view scale
+					// This ensures that, when going fullscreen, the top left corner of the view extent
+					// stays aligned with the top left corner of the view's container
+					resizeAlign: "top-left"
+				});
+		 
+				view.when().then (
+					function() {
+						// Add renderer to the layer and define a popup template
+						const url = "https://services9.arcgis.com/KwsUeU7PBAc1Ompu/arcgis/rest/services/datos_municipios_guatemala_vShort/FeatureServer";
+
+						const popupT = new PopupTemplate({
+							title: "Municipio de {municipio} (Dpto. de {departamen})",
+							expressionInfos: [
+							{
+								name: "poblacion_maya",
+								title: "Población Maya:",
+								expression: "text($feature.pob_maya,'#,###,###') + ' hab.'"
+							},
+							{
+								name: "poblacion_achi",
+								title: "Población Achi:",
+								expression: "text($feature.pob_achi,'#,###,###') + ' hab.   (' + text(round($feature.pob_achi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_akateka",
+								title: "Población Akateka:",
+								expression: "text($feature.pob_akatek,'#,###,###') + ' hab.   (' + text(round($feature.pob_akatek/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_awakateka",
+								title: "Población Awakateka:",
+								expression: "text($feature.pob_awakat,'#,###,###') + ' hab.   (' + text(round($feature.pob_awakat/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_chalchiteka",
+								title: "Población Chalchiteka:",
+								expression: "text($feature.pob_chalch,'#,###,###') + ' hab.   (' + text(round($feature.pob_chalch/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_chorti",
+								title: "Población Chorti':",
+								expression: "text($feature.pob_chorti,'#,###,###') + ' hab.   (' + text(round($feature.pob_chorti/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_chuj",
+								title: "Población Chuj:",
+								expression: "text($feature.pob_chuj,'#,###,###') + ' hab.   (' + text(round($feature.pob_chuj/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_itza",
+								title: "Población Itza':",
+								expression: "text($feature.pob_itza,'#,###,###') + ' hab.   (' + text(round($feature.pob_itza/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_ixil",
+								title: "Población Ixil:",
+								expression: "text($feature.pob_ixil,'#,###,###') + ' hab.   (' + text(round($feature.pob_ixil/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_jakalteka",
+								title: "Población Jakalteka / Popti':",
+								expression: "text($feature.pob_jakalt,'#,###,###') + ' hab.   (' + text(round($feature.pob_jakalt/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_kaqchikel",
+								title: "Población Kaqchikel:",
+								expression: "text($feature.pob_kaqchi,'#,###,###') + ' hab.   (' + text(round($feature.pob_kaqchi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_kiche",
+								title: "Población K'iche':",
+								expression: "text($feature.pob_kiche,'#,###,###') + ' hab.   (' + text(round($feature.pob_kiche/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_mam",
+								title: "Población Mam:",
+								expression: "text($feature.pob_mam,'#,###,###') + ' hab.   (' + text(round($feature.pob_mam/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_mopan",
+								title: "Población Mopan:",
+								expression: "text($feature.pob_mopan,'#,###,###') + ' hab.   (' + text(round($feature.pob_mopan/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_poqomam",
+								title: "Población Poqomam:",
+								expression: "text($feature.pob_poqoma,'#,###,###') + ' hab.   (' + text(round($feature.pob_poqoma/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_poqomchi",
+								title: "Población Poqomchi':",
+								expression: "text($feature.pob_poqomc,'#,###,###') + ' hab.   (' + text(round($feature.pob_poqomc/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_qanjobal",
+								title: "Población Q'anjob'al:",
+								expression: "text($feature.pob_qanjob,'#,###,###') + ' hab.   (' + text(round($feature.pob_qanjob/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_qeqchi",
+								title: "Población Q'eqchi':",
+								expression: "text($feature.pob_qeqchi,'#,###,###') + ' hab.   (' + text(round($feature.pob_qeqchi/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_sakapulteka",
+								title: "Población Sakapulteka:",
+								expression: "text($feature.pob_sakapu,'#,###,###') + ' hab.   (' + text(round($feature.pob_sakapu/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_sipakapense",
+								title: "Población Sipakapense:",
+								expression: "text($feature.pob_sipaka,'#,###,###') + ' hab.   (' + text(round($feature.pob_sipaka/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_tektiteka",
+								title: "Población Tektiteka:",
+								expression: "text($feature.pob_tektit,'#,###,###') + ' hab.   (' + text(round($feature.pob_tektit/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_tzutujil",
+								title: "Población Tz'utujil:",
+								expression: "text($feature.pob_tzutuj,'#,###,###') + ' hab.   (' + text(round($feature.pob_tzutuj/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							},
+							{
+								name: "poblacion_uspanteka",
+								title: "Población Uspanteka:",
+								expression: "text($feature.pob_uspant,'#,###,###') + ' hab.   (' + text(round($feature.pob_uspant/$feature.pob_maya*100,1),'#.0') + ' %)'"
+							}
+							],
+							content: [{
+								type: "fields",
+								fieldInfos: [
+								{
+									fieldName: "expression/poblacion_maya"
+								},
+								{
+									fieldName: "expression/poblacion_achi"
+								},
+								{
+									fieldName: "expression/poblacion_akateka"
+								},
+								{
+									fieldName: "expression/poblacion_awakateka"
+								},
+								{
+									fieldName: "expression/poblacion_chalchiteka"
+								},
+								{
+									fieldName: "expression/poblacion_chorti"
+								},
+								{
+									fieldName: "expression/poblacion_chuj"
+								},
+								{
+									fieldName: "expression/poblacion_itza"
+								},
+								{
+									fieldName: "expression/poblacion_ixil"
+								},
+								{
+									fieldName: "expression/poblacion_jakalteka"
+								},
+								{
+									fieldName: "expression/poblacion_kaqchikel"
+								},
+								{
+									fieldName: "expression/poblacion_kiche"
+								},
+								{
+									fieldName: "expression/poblacion_mam"
+								},
+								{
+									fieldName: "expression/poblacion_mopan"
+								},
+								{
+									fieldName: "expression/poblacion_poqomam"
+								},
+								{
+									fieldName: "expression/poblacion_poqomchi"
+								},
+								{
+									fieldName: "expression/poblacion_qanjobal"
+								},
+								{
+									fieldName: "expression/poblacion_qeqchi"
+								},
+								{
+									fieldName: "expression/poblacion_sakapulteka"
+								},
+								{
+									fieldName: "expression/poblacion_sipakapense"
+								},
+								{
+									fieldName: "expression/poblacion_tektiteka"
+								},
+								{
+									fieldName: "expression/poblacion_tzutujil"
+								},
+								{
+									fieldName: "expression/poblacion_uspanteka"
+								},
+								]
+							}]
+						});
+
+						const allmayas = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Maya unificada",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_maya",
+									color: "#e6d800",
+									label: "Maya unificado"
+								}]
+							})
+						});
+
+						const kiche = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población K'iche'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_kiche",
+									color: "#e6d800", // "#e60049",
+									label: "K'iche'"
+								}]
+							})
+						});
+
+						const qeqchi = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Q'eqchi'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_qeqchi",
+									color: "#e6d800", // "#0bb4ff",
+									label: "Q'eqchi'"
+								}]
+							})
+						});
+
+						const kaqchikel = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Kaqchikel",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_kaqchi",
+									color: "#e6d800", // "#50e991",
+									label: "Kaqchikel"
+								}]
+							})
+						});
+
+						const mam = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Mam",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_mam",
+									color: "#e6d800", // "#e6d800",
+									label: "Mam"
+								}]
+							}) 
+						});
+
+						const qanjobal = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Q'anjob'al",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_qanjob",
+									color: "#e6d800", // "#9b19f5",
+									label: "Q'anjob'al"
+								}]
+							})
+						});
+
+						const poqomchi = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Poqomchi'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_poqomc",
+									color: "#e6d800", // "#ffa300",
+									label: "Poqomchi'"
+								}]
+							})
+						});
+
+						const achi = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Achi",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_achi",
+									color: "#e6d800", // "#dc0ab4",
+									label: "Achi"
+								}]
+							})
+						});
+
+						const akateko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Akateka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_akatek",
+									color: "#e6d800", // "#b3d4ff",
+									label: "Akateko"
+								}]
+							})
+						});
+
+						const awakateko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Awakateka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_awakat",
+									color: "#e6d800", // "#32b8a6",
+									label: "Awakateko"
+								}]
+							})
+						});
+
+						const chuj = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Chuj",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_chuj",
+									color: "#e6d800", // "#f5cb11",
+									label: "Chuj"
+								}]
+							})
+						});
+
+						const itza = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Itza'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_itza",
+									color: "#e6d800", // "#eb7200",
+									label: "Itza'"
+								}]
+							})
+						});
+
+						const ixil = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Ixil",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_ixil",
+									color: "#e6d800", // "#6c7000",
+									label: "Ixil"
+								}]
+							})
+						});
+
+						const jakalteko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Jakalteka / Popti'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_jakalt",
+									color: "#e6d800", // "#c461eb",
+									label: "Jakalteko / Popti'"
+								}]
+							})
+						});
+
+						const mopan = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Mopan",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_mopan",
+									color: "#e6d800", // "#bf2e2e",
+									label: "Mopan"
+								}]
+							})
+						});
+
+						const chorti = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Chorti'",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_chorti",
+									color: "#e6d800", // "#46e39c",
+									label: "Chorti'"
+								}]
+							})
+						});
+
+						const poqomam = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Poqomam",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_poqoma",
+									color: "#e6d800", // "#9fd40c",
+									label: "Poqomam"
+								}]
+							})
+						});
+
+						const sakapulteko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Sakapulteka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_sakapu",
+									color: "#e6d800", // "#9fd40c",
+									label: "Sakapulteko"
+								}]
+							})
+						});
+
+						const sipakapense = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Sipakapense",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_sipaka",
+									color: "#e6d800", // "#46e39c",
+									label: "Sipakapense"
+								}]
+							})
+						});
+
+						const tektiteko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Tektiteka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_tektit",
+									color: "#e6d800", // "#bf2e2e",
+									label: "Tektiteko"
+								}]
+							})
+						});
+
+						const tzutujil = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Tz'utujil",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_tzutuj",
+									color: "#e6d800", // "#c461eb",
+									label: "Tz'utujil"
+								}]
+							})
+						});
+
+						const uspanteko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Uspanteka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_uspant",
+									color: "#e6d800", // "#eb7200",
+									label: "Uspanteko"
+								}]
+							})
+						});
+
+						const chalchiteko = new FeatureLayer({
+							url: url,
+							minScale: 20000000,
+							maxScale: 35000,
+							title: "Población Chalchiteka",
+							popupTemplate: popupT,
+							renderer: new DotDensityRenderer({
+								referenceDotValue: 100,
+								outline: null,
+								referenceScale: 1100000, // 1:1,100,000 view scale
+								legendOptions: {
+									unit: "habitantes"
+								},
+								attributes: [
+									{
+									field: "pob_chalch",
+									color: "#e6d800", // "#50e991",
+									label: "Chalchiteko"
+								}]
+							})
+						});
+
+						var pueblosGroupLayer = new GroupLayer({
+						  title: "Población Maya",
+						  visible: true,
+						  visibilityMode: "exclusive", //"independent"|"inherited"|"exclusive"
+						  layers: [uspanteko, tzutujil, tektiteko, sipakapense, sakapulteko, qeqchi, qanjobal, poqomchi, poqomam, mopan, mam, kiche, kaqchikel, jakalteko, ixil, itza, chuj, chorti, chalchiteko, awakateko, akateko, achi, allmayas],
+						  opacity: 1.00
+						});
+
+						map.layers.add(pueblosGroupLayer);
+
+						var searchWidget = new Search({
+							view: view,
+							allPlaceholder: "Municipio",
+							includeDefaultSources: false,
+							sources: [{
+								layer: allmayas,
+								searchFields: ["municipio"],
+								displayField: "municipio",
+								exactMatch: false,
+								popupEnabled: true,
+								locationEnabled: false,
+								outFields: ["*"],
+								name: "Municipio",
+								placeholder: "buscar municipio"
+							}]
+						});
+						
+						view.ui.add([
+							new Home({
+								view: view,
+								group: "top-left"
+							}),
+							new Expand({
+								view: view,
+								content: searchWidget,
+								group: "top-left",
+							}),
+							new Expand({
+								view: view,
+								content: new LayerList({ 
+									view: view,
+				//					listItemCreatedFunction: function(event) {
+				//						const item = event.item;
+				//						item.panel = {
+				//							content: ["legend"],
+				//							open: false
+				//						};
+				//					}
+								}),
+								group: "top-left",
+								expanded: true
+							}),
+							new Expand({
+								view: view,
+								content: new Bookmarks({ view: view }),
+								group: "top-left"
+							}),
+						], "top-left");
+						
+						view.ui.add(
+							new Fullscreen({
+							view: view,
+							element: viewDiv
+							}),
+							"top-right"
+						);
+					}
+				);
+			});
+		</script>
+	</head>
+
+	<body>
+		<div id="applicationDiv">
+			<div id="headerDiv" class="esri-widget">
+				<span id="span_tipoA">fuente: INE, Censo poblacional 2018 Resultados por municipio</span>
+				<span><h3>GUATEMALA - Población maya</h3></span>
+			</div>
+			<div id="viewDiv"></div>
+		</div>
+	</body>
+</html>
