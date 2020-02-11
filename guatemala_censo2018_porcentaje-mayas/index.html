@@ -151,7 +151,8 @@
 				map.add(featureLayerRep,2);
 				
  				// inicializa con porcentaje de población maya = 50 %
-				setFeatureLayerViewFilter(50);
+				var initialValue = 50;
+				setFeatureLayerViewFilter(initialValue);
 
 				var searchWidget = new Search({
 					view: view,
@@ -192,13 +193,12 @@
 					}],
 					container: "sliderDiv"
 				});
-
 				view.ui.add("containerDiv", "bottom-left");
 					
 				const slider = new Slider({
 					min: 0,
 					max: 100,
-					values: [50],
+					values: [initialValue],
 					label: "Porcentaje de población maya",
 					rangeLabelsVisible: true,
 					labelsVisible: true,
@@ -240,9 +240,9 @@
 				}];				
 					
 				// Server-side filter
-//				function setFeatureLayerFilter(expression) {
-//					featureLayer.definitionExpression = expression;
-//				}
+				<!-- function setFeatureLayerFilter(expression) { -->
+					<!-- featureLayer.definitionExpression = expression; -->
+				<!-- } -->
 				
 				// Client-side filter
 				function setFeatureLayerViewFilter(porcentaje) {
@@ -250,7 +250,7 @@
 						featureLayerView.filter = {
 							where: "Porcen_May > " + porcentaje / 100
 						};
-
+							
 						var filterTags = document.getElementsByClassName("filterDiv");
 						for (var i = 0; i < filterTags.length; i++) {
 							filterTags[i].innerText = parseInt(porcentaje * 10) / 10 + " %"
@@ -319,7 +319,7 @@
 		</div>
 		<div id="viewDiv">
 			<div id="sidebar">
-				<h1>Municipios filtrados:<br>Datos demográficos y territoriales</h1>
+				<h1>Municipios filtrados,<br>Datos demográficos y territoriales</h1>
 				<br>
 				<div id="results">
 					<h3 style="text-align: center;">En los municipios resaltados<br>más de <span class="filterDiv" id="filterDiv_1">50 %</span> de la población<br>
@@ -395,7 +395,7 @@
 		<div id="containerDiv" class="esri-widget">
 			<span id="title" class="esri-widget">% de población maya</span>
 			<div id="sliderDiv"></div>
-			<span class="filterDiv" id="filterDiv_2">50 %</span>
+			<span class="filterDiv" id="filterDiv_2"></span>
 		</div>
 	</body>
 
