@@ -48,8 +48,6 @@
 				font-weight: 400;
 				font-style: normal;
 				text-align: center;
-				padding: 0;
-				margin: 0;
 			}
 			
 			#viewDiv {
@@ -62,7 +60,7 @@
 			#span_tipoA {
 				position: absolute;
 				left: 120px;
-				padding-top: 7px;
+				top: 7px;
 				font-size: 0.8rem;
 				width: 14rem;
 				text-indent: -3rem;
@@ -71,13 +69,13 @@
 			
 			#containerDiv {
 				background-color: white;
-				padding: 1rem 3px;
-				text-align: center;
 				min-width: 260px;
 			}
 
 			#title {
 				font-size: 14pt;
+				text-align: center;
+				padding-top: 0.7rem;
 			}
 
 		</style>
@@ -138,10 +136,6 @@
 						rotationEnabled: false
 					},
 					scale: 2750000, // 1:2,750,000 view scale
-					
-					// This ensures that, when going fullscreen, the top left corner of the view extent
-					// stays aligned with the top left corner of the view's container
-					
 					resizeAlign: "top-left"
 				});
 
@@ -175,45 +169,25 @@
 
 				function generateRenderer() {
 				
-					// configure parameters for the color renderer generator
-					// the layer must be specified along with a field name
-					// or arcade expression. The view and other properties determine
-					// the appropriate default color scheme.
-
 					const colorParams = {
 						layer: layer,
 						valueExpression: "( $feature.pob_maya / $feature.pob_total ) * 100",
 						view: view,
 						theme: "high-to-low",
 						outlineOptimizationEnabled: true
-						<!-- colorRamps.byName("Blue 8") -->
-						<!-- colorScheme: "Green 8" -->
-						<!-- Color.fromString("blue") -->
 					};
-
-					// Generate a continuous color renderer based on the
-					// statistics of the data in the provided layer
-					// and field normalized by the normalizationField.
-					//
-					// This resolves to an object containing several helpful
-					// properties, including color scheme, statistics,
-					// the renderer and visual variable
 
 					let rendererResult;
 
 					colorRendererCreator
 					.createContinuousRenderer(colorParams)
 					.then(function(response) {
-						// set the renderer to the layer and add it to the map
 						rendererResult = response;
 						layer.renderer = rendererResult.renderer;
 
 						if (!map.layers.includes(layer)) {
 							map.add(layer);
 						};
-
-						// generate a histogram for use in the slider. Input the layer
-						// and field or arcade expression to generate it.
 
 						return histogram({
 							layer: layer,
@@ -224,28 +198,28 @@
 					})
 					.then(function(histogramResult) {
 					
-						// Construct a color slider from the result of both
-						// smart mapping renderer and histogram methods
-						
 						const colorSlider = ColorSlider.fromRendererResult(
 							rendererResult,
 							histogramResult
 						);
 
 						view.ui.add("containerDiv", "bottom-left");
-						document.getElementById("title").innerHTML = "% Población maya";			  
+						
+						var para = document.createElement("p");
+						var node = document.createTextNode("% Población maya");
+						para.appendChild(node);
+						para.id = "title";
+						var element = document.getElementById("containerDiv");
+						var child = document.getElementById("slider");
+						element.insertBefore(para, child);
+
 						colorSlider.viewModel.precision = 1;
 						colorSlider.container = "slider";
 						colorSlider.primaryHandleEnabled = true;
 						
-						// Round labels to 1 decimal place
-						
 						colorSlider.labelFormatFunction = function(value, type) {
 							return value.toFixed(1);
 						};
-						
-						// styles the standard deviation lines to be shorter
-						// than the average line
 						
 						colorSlider.histogramConfig.dataLineCreatedFunction = function(
 							lineElement,
@@ -258,14 +232,6 @@
 								labelElement.innerHTML = sign + "σ";
 							}
 						};
-
-						<!-- colorSlider.viewModel.zoomOptions = { -->
-							<!-- min: 80, -->
-							<!-- max: 100 -->
-						<!-- }; -->
-
-						// when the user slides the handle(s), update the renderer
-						// with the updated color visual variable object
 
 						function changeEventHandler() {
 							const renderer = layer.renderer.clone();
@@ -333,7 +299,6 @@
 			</div>
 			<div id="viewDiv"></div>
 			<div id="containerDiv" class="esri-widget">
-				<span id="title" class="esri-widget"></span>
 				<div id="slider"></div>
 			</div>
 		</div>
